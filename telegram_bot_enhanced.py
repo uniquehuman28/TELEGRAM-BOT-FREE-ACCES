@@ -15,15 +15,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 
 # ==================== KONFIGURASI ====================
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+BOT_TOKEN = "7383735988:AAFGMP-aseCISm3GLCFmUnKPymaWe-FddAw"
 ADMIN_IDS = [7818451398]
 QRIS_PATH = "/path/to/qris.jpg"  # Path ke file QRIS di VPS
 BANK_INFO = """
 💳 **Informasi Rekening:**
-BCA: 1234567890 a.n. Nama Pemilik
-BNI: 0987654321 a.n. Nama Pemilik
-DANA: 081234567890
-OVO: 081234567890
+SEABANK: 901423312905 a.n. Aldo Kurniawan Franza Saputra
+DANA: 081284672115 Zahida
 """
 DONASI_INFO = """
 🙏 **Terima kasih atas niat baik Anda!**
