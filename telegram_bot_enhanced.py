@@ -17,7 +17,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # ==================== KONFIGURASI ====================
 BOT_TOKEN = "7383735988:AAFGMP-aseCISm3GLCFmUnKPymaWe-FddAw"
 ADMIN_IDS = [7818451398]
-QRIS_PATH = "/path/to/qris.jpg"  # Path ke file QRIS di VPS
+QRIS_PATH = "/home/ubuntu/TELEGRAM-BOT-FREE-ACCES/qris.jpg"
 BANK_INFO = """
 💳 **Informasi Rekening:**
 SEABANK: 901423312905 a.n. Aldo Kurniawan Franza Saputra
