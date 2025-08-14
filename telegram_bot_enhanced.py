@@ -17,14 +17,15 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # ==================== KONFIGURASI ====================
 BOT_TOKEN = "7383735988:AAFGMP-aseCISm3GLCFmUnKPymaWe-FddAw"
 ADMIN_IDS = [7818451398]
-QRIS_PATH = "/home/ubuntu/TELEGRAM-BOT-FREE-ACCES/qris.jpg"
+QRIS_PATH = "/home/ubuntu/TELEGRAM-BOT-FREE-ACCES/QRIS.jpg"
 BANK_INFO = """
-💳 **Informasi Rekening:**
-SEABANK: 901423312905 a.n. Aldo Kurniawan Franza Saputra
+💳 Informasi Rekening:
+SEABANK: 901423312905 
+a.n. Aldo Kurniawan Franza Saputra
 DANA: 081284672115 Zahida
 """
 DONASI_INFO = """
-🙏 **Terima kasih atas niat baik Anda!**
+🙏 Terima kasih atas niat baik Anda!
 
 Donasi akan digunakan untuk:
 • Maintenance server VPS
@@ -249,7 +250,7 @@ def create_main_menu(is_admin=False):
     """Membuat menu utama inline keyboard"""
     keyboard = [
         [InlineKeyboardButton(text="📄 TXT→VCF", callback_data="txt_to_vcf")],
-        [InlineKeyboardButton(text="📇 VCF→TXT", callback_data="vcf_to_txt")],
+        [InlineKeyboardButton(text="📇 VCF→TXT (error)", callback_data="vcf_to_txt")],
         [InlineKeyboardButton(text="ℹ️ Cara Penggunaan", callback_data="help")],
         [InlineKeyboardButton(text="💰 Donasi", callback_data="donasi")]
     ]
@@ -273,20 +274,20 @@ async def start_cmd(msg: Message, state: FSMContext):
     
     is_admin = msg.from_user.id in ADMIN_IDS
     welcome_text = f"""
-🤖 **Selamat datang di Bot Konversi Kontak!**
+🤖 Selamat datang di Bot Konversi Kontak!
 
 Halo {msg.from_user.first_name}! 👋
 
 Pilih fitur yang ingin kamu gunakan:
 
-📄 **TXT→VCF**: Konversi file teks menjadi kontak vCard
-📇 **VCF→TXT**: Ekstrak nomor telepon dari kontak vCard
-ℹ️ **Cara Penggunaan**: Panduan lengkap penggunaan bot
-💰 **Donasi**: Dukung pengembangan bot ini
+📄 TXT→VCF: Konversi file teks menjadi kontak vCard
+📇 VCF→TXT: Ekstrak nomor telepon dari kontak vCard
+ℹ️ Cara Penggunaan: Panduan lengkap penggunaan bot
+💰 Donasi: Dukung pengembangan bot ini
 """
     
     if is_admin:
-        welcome_text += "\n🖥️ **Info VPS**: Lihat status server (Admin)"
+        welcome_text += "\n🖥️ Info VPS: Lihat status server (Admin)"
     
     await msg.answer(welcome_text, reply_markup=create_main_menu(is_admin))
 
@@ -322,9 +323,9 @@ async def callback_vcf_to_txt(call: CallbackQuery, state: FSMContext):
 async def callback_help(call: CallbackQuery):
     await call.answer()
     help_text = """
-📋 **CARA PENGGUNAAN BOT**
+📋 CARA PENGGUNAAN BOT
 
-🔹 **TXT → VCF (Teks ke Kontak)**
+🔹 TXT → VCF (Teks ke Kontak)
 1️⃣ Pilih "📄 TXT→VCF" dari menu utama
 2️⃣ Upload file .txt berisi nomor telepon (satu nomor per baris)
 3️⃣ Ketik /konfirmasi setelah selesai upload
@@ -333,26 +334,26 @@ async def callback_help(call: CallbackQuery):
 6️⃣ Tentukan jumlah kontak per file VCF (contoh: 50)
 7️⃣ Bot akan memproses dan mengirim file VCF
 
-🔹 **VCF → TXT (Kontak ke Teks)**
+🔹 VCF → TXT (Kontak ke Teks)
 1️⃣ Pilih "📇 VCF→TXT" dari menu utama
 2️⃣ Upload file .vcf (kontak vCard)
 3️⃣ Ketik /proses setelah selesai upload
 4️⃣ Bot akan mengekstrak nomor telepon ke file .txt
 
-📝 **Format Nomor yang Didukung:**
-• Indonesia: +62, 08xx
+📝 Format Nomor yang Didukung:
+• Indonesia: +62
 • Malaysia: +60
 • Singapura: +65
 • Hong Kong: +852
 • India: +91
 • Dan negara lainnya...
 
-💡 **Tips:**
+💡 Tips:
 • File akan otomatis dihapus setelah proses selesai
 • Nomor duplikat akan dihilangkan otomatis
 • Format nomor akan diseragamkan
 
-❓ **Butuh bantuan?** Hubungi admin!
+❓ Butuh bantuan? Hubungi admin!
     """
     
     back_keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -914,7 +915,7 @@ async def handle_unexpected_message(msg: Message, state: FSMContext):
     if current_state is None:
         await msg.reply(
             "👋 Halo! Ketik /start untuk menggunakan bot ini.\n\n"
-            "🤖 **Fitur yang tersedia:**\n"
+            "🤖 Fitur yang tersedia:\n"
             "• 📄 TXT→VCF: Konversi nomor telepon ke kontak\n"
             "• 📇 VCF→TXT: Ekstrak nomor dari kontak\n"
             "• ℹ️ /help: Panduan penggunaan"
