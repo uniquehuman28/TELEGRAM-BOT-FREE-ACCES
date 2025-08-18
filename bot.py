@@ -281,8 +281,8 @@ def clear_session(user_id: int):
 def create_main_menu(is_admin=False):
     """Membuat menu utama inline keyboard"""
     keyboard = [
-        [InlineKeyboardButton(text="📄 TXT→VCF", callback_data="txt_to_vcf")],
-        [InlineKeyboardButton(text="📇 VCF→TXT", callback_data="vcf_to_txt")],
+        [InlineKeyboardButton(text="📄 TXT to VCF", callback_data="txt_to_vcf")],
+        [InlineKeyboardButton(text="📇 VCF to TXT", callback_data="vcf_to_txt")],
         [InlineKeyboardButton(text="ℹ️ Cara Penggunaan", callback_data="help")],
         [InlineKeyboardButton(text="💰 Donasi", callback_data="donasi")]
     ]
@@ -313,8 +313,8 @@ Halo {msg.from_user.first_name}! 👋
 
 Pilih fitur yang ingin kamu gunakan:
 
-📄 TXT→VCF: Konversi file teks menjadi kontak vCard
-📇 VCF→TXT: Ekstrak nomor telepon dari kontak vCard
+📄 TXT to VCF: Konversi file teks menjadi kontak vCard
+📇 VCF to TXT: Ekstrak nomor telepon dari kontak vCard
 ℹ️ Cara Penggunaan: Panduan lengkap penggunaan bot
 💰 Donasi: Dukung pengembangan bot ini
 """
@@ -358,8 +358,8 @@ async def callback_help(call: CallbackQuery):
     help_text = """
 📋 CARA PENGGUNAAN BOT
 
-🔹 TXT → VCF (Teks ke Kontak)
-1️⃣ Pilih "📄 TXT→VCF" dari menu utama
+🔹 TXT to VCF (Teks ke Kontak)
+1️⃣ Pilih "📄 TXT to VCF" dari menu utama
 2️⃣ Upload file .txt berisi nomor telepon (satu nomor per baris)
 3️⃣ Ketik /konfirmasi setelah selesai upload
 4️⃣ Masukkan nama kontak dasar (contoh: "Customer")
@@ -367,8 +367,8 @@ async def callback_help(call: CallbackQuery):
 6️⃣ Tentukan jumlah kontak per file VCF (contoh: 50)
 7️⃣ Bot akan memproses dan mengirim file VCF
 
-🔹 VCF → TXT (Kontak ke Teks)
-1️⃣ Pilih "📇 VCF→TXT" dari menu utama
+🔹 VCF to TXT (Kontak ke Teks)
+1️⃣ Pilih "📇 VCF to TXT" dari menu utama
 2️⃣ Upload file .vcf (kontak vCard)
 3️⃣ Ketik /proses setelah selesai upload
 4️⃣ Masukkan nama file output untuk file TXT
@@ -518,8 +518,8 @@ Halo {call.from_user.first_name}! 👋
 
 Pilih fitur yang ingin kamu gunakan:
 
-📄 **TXT→VCF**: Konversi file teks menjadi kontak vCard
-📇 **VCF→TXT**: Ekstrak nomor telepon dari kontak vCard
+📄 **TXT to VCF**: Konversi file teks menjadi kontak vCard
+📇 **VCF to TXT**: Ekstrak nomor telepon dari kontak vCard
 ℹ️ **Cara Penggunaan**: Panduan lengkap penggunaan bot
 💰 **Donasi**: Dukung pengembangan bot ini
 """
@@ -910,8 +910,8 @@ async def help_cmd(msg: Message):
     help_text = """
 📋 **CARA PENGGUNAAN BOT**
 
-🔹 **TXT → VCF (Teks ke Kontak)**
-1️⃣ Ketik /start dan pilih "📄 TXT→VCF"
+🔹 **TXT to VCF (Teks ke Kontak)**
+1️⃣ Ketik /start dan pilih "📄 TXT to VCF"
 2️⃣ Upload file .txt berisi nomor telepon (satu nomor per baris)
 3️⃣ Ketik /konfirmasi setelah selesai upload
 4️⃣ Masukkan nama kontak dasar (contoh: "Customer")
@@ -919,8 +919,8 @@ async def help_cmd(msg: Message):
 6️⃣ Tentukan jumlah kontak per file VCF (contoh: 50)
 7️⃣ Bot akan memproses dan mengirim file VCF
 
-🔹 **VCF → TXT (Kontak ke Teks)**
-1️⃣ Ketik /start dan pilih "📇 VCF→TXT"
+🔹 **VCF to TXT (Kontak ke Teks)**
+1️⃣ Ketik /start dan pilih "📇 VCF to TXT"
 2️⃣ Upload file .vcf (kontak vCard)
 3️⃣ Ketik /proses setelah selesai upload
 4️⃣ Masukkan nama file output untuk file TXT
@@ -963,8 +963,8 @@ async def handle_unexpected_document(msg: Message, state: FSMContext):
         await msg.reply(
             "📄 File diterima! Tapi Anda belum memilih mode konversi.\n\n"
             "Ketik /start untuk memilih apakah ingin:\n"
-            "• 📄 TXT→VCF (konversi teks ke kontak)\n"
-            "• 📇 VCF→TXT (ekstrak nomor dari kontak)"
+            "• 📄 TXT to VCF (konversi teks ke kontak)\n"
+            "• 📇 VCF to TXT (ekstrak nomor dari kontak)"
         )
     else:
         await msg.reply("❌ File tidak sesuai dengan mode yang dipilih atau format tidak didukung.")
@@ -977,8 +977,8 @@ async def handle_unexpected_message(msg: Message, state: FSMContext):
         await msg.reply(
             "👋 Halo! Ketik /start untuk menggunakan bot ini.\n\n"
             "🤖 Fitur yang tersedia:\n"
-            "• 📄 TXT→VCF: Konversi nomor telepon ke kontak\n"
-            "• 📇 VCF→TXT: Ekstrak nomor dari kontak\n"
+            "• 📄 TXT to VCF: Konversi nomor telepon ke kontak\n"
+            "• 📇 VCF to TXT: Ekstrak nomor dari kontak\n"
             "• ℹ️ /help: Panduan penggunaan"
         )
     elif current_state in [UploadStates.collecting_txt.state, UploadStates.collecting_vcf.state]:
@@ -1000,6 +1000,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
