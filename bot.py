@@ -146,15 +146,56 @@ def parse_vcf_numbers(vcf_path: Path) -> List[str]:
                 # Hapus spasi dari nomor seperti "+852 6055 3083" menjadi "+85260553083"
                 clean_number = re.sub(r'\s+', '', clean_number)
                 
-                # Gunakan fungsi format_number yang sudah ada
-                formatted = format_number(clean_number)
-                if formatted:
-                    numbers.append(formatted)
+                # Gunakan fungsi clean_number untuk membersihkan dan normalisasi
+                cleaned = clean_number(clean_number)
+                if cleaned:
+                    numbers.append(cleaned)
                     
     except Exception as e:
         print(f"Error parsing {vcf_path}: {e}")
     
     return numbers
+
+def clean_number(number: str) -> str:
+    """Membersihkan dan normalisasi nomor telepon"""
+    if not number:
+        return None
+    
+    # Hapus semua karakter non-digit
+    digits = re.sub(r'\D', '', number)
+    
+    if not digits:
+        return None
+    
+    # Handle nomor Indonesia (08... -> 62...)
+    if digits.startswith('08') and len(digits) >= 10:
+        digits = '62' + digits[1:]
+    
+    # Handle nomor dengan kode negara +62 atau 62 di depan
+    elif digits.startswith('62'):
+        pass  # sudah benar
+    
+    # Handle nomor dengan + di depan
+    elif digits.startswith('62'):
+        pass  # sudah benat
+    
+    # Untuk negara lain, biarkan sesuai digit aslinya
+    else:
+        # Cek apakah ini nomor internasional lain
+        # Biarkan saja, sudah dalam format digit
+    
+    return digits
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitasi nama file untuk keamanan"""
+    # Hanya izinkan huruf, angka, underscore, strip, dan titik
+    sanitized = re.sub(r'[^\w\-_.]', '_', filename)
+    # Hapus titik berurutan
+    sanitized = re.sub(r'\.+', '.', sanitized)
+    # Pastikan tidak kosong
+    if not sanitized:
+        return 'extracted_numbers.txt'
+    return sanitized
 
 def get_disk_usage():
     """Mendapatkan informasi penggunaan disk VPS"""
@@ -214,76 +255,6 @@ def plan_outputs(src_folder: Path, base_file_name: str, per_file: int, output_di
 
     return plan, total_contacts, conflicts, invalid_count
 
-def plan_vcf_to_txt(src_folder: Path, output_dir: Path):
-    """Plan untuk konversi VCF ke TXT"""
-    vcf_files = list_vcf_files(src_folder)
-    if not vcf_files:
-        raise ValueError("Folder tidak berisi file .vcf.")
-
-    all_numbers = []
-    invalid_count = 0
-    
-    for vcf_file in vcf_files:
-        numbers = parse_vcf_numbers(vcf_file)
-        all_numbers.extend(numbers)
-    
-    # Remove duplicates
-    all_numbers = remove_duplicates(all_numbers)
-    total_numbers = len(all_numbers)
-    
-    if total_numbers == 0:
-        return None, 0, invalid_count
-    
-    # Output ke satu file TXT
-    output_path = output_dir / "extracted_numbers.txt"
-    return all_numbers, total_numbers, output_path
-
-# ==================== STATES BARU UNTUK VCF2TXT ====================
-class VCF2TXTStates(StatesGroup):
-    waiting_vcf_file = State()
-    waiting_filename = State()
-    waiting_limit = State()
-    processing = State()
-
-# ==================== FUNGSI KONVERSI VCF KE TXT - DIPERBAIKI ====================
-def convert_vcf_to_txt(vcf_path: Path, output_filename: str, limit: int = None) -> List[Path]:
-    """Konversi file VCF ke TXT dengan opsi pembatasan jumlah nomor per file - DIPERBAIKI"""
-    
-    # Parsing nomor dari VCF menggunakan fungsi yang diperbaiki
-    numbers = parse_vcf_numbers(vcf_path)
-    
-    # Jika tidak ada nomor yang ditemukan
-    if not numbers:
-        return []
-    
-    # Hapus duplikat
-    numbers = remove_duplicates(numbers)
-    
-    # Batch nomor sesuai limit
-    if limit and limit > 0:
-        batches = [numbers[i:i+limit] for i in range(0, len(numbers), limit)]
-    else:
-        batches = [numbers]
-    
-    # Buat file output
-    out_files = []
-    base_name = output_filename.rsplit('.', 1)[0]
-    extension = '.txt'
-    
-    for idx, batch in enumerate(batches, start=1):
-        if idx == 1:
-            file_name = f"{base_name}{extension}"
-        else:
-            file_name = f"{base_name}_{idx}{extension}"
-        
-        file_path = vcf_path.parent / file_name
-        with open(file_path, "w", encoding="utf-8") as f:
-            for num in batch:
-                f.write(num + "\n")
-        out_files.append(file_path)
-    
-    return out_files
-
 # ==================== SETUP BOT ====================
 class UploadStates(StatesGroup):
     # TXT to VCF states
@@ -295,6 +266,7 @@ class UploadStates(StatesGroup):
     
     # VCF to TXT states
     collecting_vcf = State()
+    ask_output_filename = State()  # New state for VCF output filename
     processing_vcf = State()
 
 bot = Bot(token=BOT_TOKEN)
@@ -316,7 +288,7 @@ def create_main_menu(is_admin=False):
     """Membuat menu utama inline keyboard"""
     keyboard = [
         [InlineKeyboardButton(text="📄 TXT→VCF", callback_data="txt_to_vcf")],
-        [InlineKeyboardButton(text="📇 VCF→TXT (BETA)", callback_data="vcf_to_txt")],
+        [InlineKeyboardButton(text="📇 VCF→TXT", callback_data="vcf_to_txt")],
         [InlineKeyboardButton(text="ℹ️ Cara Penggunaan", callback_data="help")],
         [InlineKeyboardButton(text="💰 Donasi", callback_data="donasi")]
     ]
@@ -331,132 +303,6 @@ def create_donasi_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Saya Sudah Donasi", callback_data="sudah_donasi")]
     ])
-
-# ==================== COMMAND /VCF2TXT BARU ====================
-@dp.message(Command("vcf2txt"))
-async def cmd_vcf2txt(msg: Message, state: FSMContext):
-    """Handler untuk command /vcf2txt - Konversi VCF ke TXT"""
-    clear_session(msg.from_user.id)
-    session_paths(msg.from_user.id)
-    await state.set_state(VCF2TXTStates.waiting_vcf_file)
-    await state.update_data(vcf_file=None)
-    
-    await msg.answer("Silakan kirim file VCF yang ingin Anda konversi menjadi TXT.")
-
-@dp.message(VCF2TXTStates.waiting_vcf_file, F.document)
-async def handle_vcf2txt_file(msg: Message, state: FSMContext):
-    """Handler untuk menerima file VCF"""
-    doc = msg.document
-    
-    # Validasi file
-    if not (doc.file_name.lower().endswith(".vcf") or doc.mime_type in ["text/vcard", "text/x-vcard"]):
-        await msg.reply("Maaf, saya hanya bisa menerima file dengan ekstensi .vcf")
-        return
-    
-    # Simpan file
-    in_dir, _ = session_paths(msg.from_user.id)
-    vcf_path = in_dir / doc.file_name
-    
-    try:
-        file = await bot.get_file(doc.file_id)
-        await bot.download_file(file.file_path, destination=vcf_path)
-        
-        # Simpan path file ke state
-        await state.update_data(vcf_file=str(vcf_path))
-        await state.set_state(VCF2TXTStates.waiting_filename)
-        
-        await msg.answer(
-            "Masukkan nama file output yang diinginkan, contoh: kontak.txt. "
-            "Jika dikosongkan, maka akan digunakan nama default contacts.txt."
-        )
-        
-    except Exception as e:
-        await msg.reply(f"Maaf, terjadi kesalahan saat menyimpan file: {str(e)}")
-
-@dp.message(VCF2TXTStates.waiting_filename)
-async def handle_vcf2txt_filename(msg: Message, state: FSMContext):
-    """Handler untuk menerima nama file output"""
-    filename = msg.text.strip() if msg.text else ""
-    
-    if not filename:
-        filename = "contacts.txt"
-    elif not filename.endswith('.txt'):
-        filename += '.txt'
-    
-    await state.update_data(output_filename=filename)
-    await state.set_state(VCF2TXTStates.waiting_limit)
-    
-    await msg.answer(
-        "Berapa jumlah maksimal nomor yang ingin Anda simpan per file TXT? "
-        "Masukkan angka, atau kosongkan saja jika ingin semua nomor disimpan dalam satu file."
-    )
-
-@dp.message(VCF2TXTStates.waiting_limit)
-async def handle_vcf2txt_limit(msg: Message, state: FSMContext):
-    """Handler untuk menerima limit jumlah nomor"""
-    limit_text = msg.text.strip() if msg.text else ""
-    
-    limit = None
-    if limit_text:
-        try:
-            limit = int(limit_text)
-            if limit <= 0:
-                limit = None
-        except ValueError:
-            await msg.reply("Mohon masukkan angka yang valid atau kosongkan saja")
-            return
-    
-    # Ambil data dari state
-    data = await state.get_data()
-    vcf_path = Path(data['vcf_file'])
-    output_filename = data['output_filename']
-    
-    await state.set_state(VCF2TXTStates.processing)
-    
-    # Proses konversi
-    processing_msg = await msg.answer("Sedang memproses file VCF Anda...")
-    
-    try:
-        # Konversi VCF ke TXT
-        output_files = convert_vcf_to_txt(vcf_path, output_filename, limit)
-        
-        if not output_files:
-            await processing_msg.edit_text("Maaf, tidak ditemukan nomor telepon dalam file VCF tersebut")
-            clear_session(msg.from_user.id)
-            await state.clear()
-            return
-        
-        # Hitung total nomor
-        total_numbers = 0
-        for file_path in output_files:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                total_numbers += sum(1 for _ in f)
-        
-        await processing_msg.edit_text(
-            f"✅ Konversi selesai!\n\n"
-            f"📊 Total nomor diekstrak: {total_numbers}\n"
-            f"📁 File dibuat: {len(output_files)}"
-        )
-        
-        # Kirim file hasil
-        if len(output_files) == 1:
-            file_input = FSInputFile(output_files[0])
-            await msg.answer_document(document=file_input)
-        else:
-            # Kirim dalam batch jika banyak file
-            for i in range(0, len(output_files), 10):
-                batch = output_files[i:i+10]
-                media = [InputMediaDocument(media=FSInputFile(fp)) for fp in batch]
-                await msg.answer_media_group(media=media)
-        
-        # Bersihkan session
-        clear_session(msg.from_user.id)
-        await state.clear()
-        
-    except Exception as e:
-        await processing_msg.edit_text(f"Maaf, terjadi kesalahan saat memproses file: {str(e)}")
-        clear_session(msg.from_user.id)
-        await state.clear()
 
 # ==================== HANDLERS LAINNYA ====================
 @dp.message(Command("start"))
@@ -531,7 +377,8 @@ async def callback_help(call: CallbackQuery):
 1️⃣ Pilih "📇 VCF→TXT" dari menu utama
 2️⃣ Upload file .vcf (kontak vCard)
 3️⃣ Ketik /proses setelah selesai upload
-4️⃣ Bot akan mengekstrak nomor telepon ke file .txt
+4️⃣ Masukkan nama file output untuk file TXT
+5️⃣ Bot akan mengekstrak nomor telepon ke file .txt
 
 📝 Format Nomor yang Didukung:
 • Indonesia: +62
@@ -878,6 +725,31 @@ async def cmd_proses_vcf(msg: Message, state: FSMContext):
         return
 
     summary = "\n".join([f"• {name}" for name in uploaded])
+    await msg.reply(
+        f"📂 File yang akan diproses ({len(uploaded)}):\n{summary}\n\n"
+        f"Sekarang masukkan nama file output untuk file TXT:"
+    )
+    await state.set_state(UploadStates.ask_output_filename)
+
+@dp.message(UploadStates.ask_output_filename)
+async def handle_vcf_output_filename(msg: Message, state: FSMContext):
+    """Handler untuk menerima nama file output TXT"""
+    filename = msg.text.strip() if msg.text else ""
+    
+    # Gunakan default jika kosong
+    if not filename:
+        filename = "extracted_numbers.txt"
+    elif not filename.endswith('.txt'):
+        filename += '.txt'
+    
+    # Sanitasi nama file
+    filename = sanitize_filename(filename)
+    
+    await state.update_data(output_filename=filename)
+    
+    data = await state.get_data()
+    uploaded = data.get("uploaded_files", [])
+    summary = "\n".join([f"• {name}" for name in uploaded])
     status = await msg.reply(
         f"📂 File yang akan diproses ({len(uploaded)}):\n{summary}\n\n"
         f"⏳ Sedang memproses..."
@@ -887,6 +759,7 @@ async def cmd_proses_vcf(msg: Message, state: FSMContext):
     
     try:
         in_dir, out_dir = session_paths(msg.from_user.id)
+        output_filename = data.get("output_filename", "extracted_numbers.txt")
         
         # Parse semua file VCF
         all_numbers = []
@@ -908,8 +781,8 @@ async def cmd_proses_vcf(msg: Message, state: FSMContext):
             await state.clear()
             return
         
-        # Tulis ke file TXT
-        output_path = out_dir / "extracted_numbers.txt"
+        # Tulis ke file TXT dengan nama yang ditentukan
+        output_path = out_dir / output_filename
         with open(output_path, "w", encoding="utf-8") as f:
             for number in all_numbers:
                 f.write(f"{number}\n")
@@ -921,7 +794,7 @@ async def cmd_proses_vcf(msg: Message, state: FSMContext):
             f"• File VCF diproses: {processed_files}\n"
             f"• Total nomor diekstrak: {total_numbers}\n"
             f"• Duplikat dihapus: otomatis\n\n"
-            f"📁 File hasil berisi nomor telepon (1 per baris)"
+            f"📁 File hasil: `{output_filename}`"
         )
         
         await status.edit_text(summary_text)
@@ -930,7 +803,7 @@ async def cmd_proses_vcf(msg: Message, state: FSMContext):
         file_input = FSInputFile(output_path)
         await msg.answer_document(
             document=file_input,
-            caption="📄 File berisi nomor telepon yang diekstrak dari VCF"
+            caption=f"📄 File berisi nomor telepon yang diekstrak dari VCF"
         )
         
         # Auto hapus cache setelah selesai
@@ -1056,7 +929,8 @@ async def help_cmd(msg: Message):
 1️⃣ Ketik /start dan pilih "📇 VCF→TXT"
 2️⃣ Upload file .vcf (kontak vCard)
 3️⃣ Ketik /proses setelah selesai upload
-4️⃣ Bot akan mengekstrak nomor telepon ke file .txt
+4️⃣ Masukkan nama file output untuk file TXT
+5️⃣ Bot akan mengekstrak nomor telepon ke file .txt
 
 📝 **Format Nomor yang Didukung:**
 • Indonesia: +62, 08xx
@@ -1077,7 +951,6 @@ async def help_cmd(msg: Message):
 /start - Menu utama
 /help - Panduan penggunaan
 /donasi - Info donasi
-/vcf2txt - Konversi VCF ke TXT (baru)
 /hapus_cache - Hapus cache Anda
 
 **Admin Commands:**
@@ -1097,8 +970,7 @@ async def handle_unexpected_document(msg: Message, state: FSMContext):
             "📄 File diterima! Tapi Anda belum memilih mode konversi.\n\n"
             "Ketik /start untuk memilih apakah ingin:\n"
             "• 📄 TXT→VCF (konversi teks ke kontak)\n"
-            "• 📇 VCF→TXT (ekstrak nomor dari kontak)\n"
-            "• /vcf2txt (konversi VCF ke TXT dengan flow interaktif)"
+            "• 📇 VCF→TXT (ekstrak nomor dari kontak)"
         )
     else:
         await msg.reply("❌ File tidak sesuai dengan mode yang dipilih atau format tidak didukung.")
@@ -1113,7 +985,6 @@ async def handle_unexpected_message(msg: Message, state: FSMContext):
             "🤖 Fitur yang tersedia:\n"
             "• 📄 TXT→VCF: Konversi nomor telepon ke kontak\n"
             "• 📇 VCF→TXT: Ekstrak nomor dari kontak\n"
-            "• /vcf2txt: Konversi VCF ke TXT (flow interaktif)\n"
             "• ℹ️ /help: Panduan penggunaan"
         )
     elif current_state in [UploadStates.collecting_txt.state, UploadStates.collecting_vcf.state]:
