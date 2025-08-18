@@ -115,10 +115,9 @@ def parse_vcf_numbers(vcf_path: Path) -> List[str]:
     """Parse file VCF dan ekstrak nomor telepon - DIPERBAIKI"""
     numbers = []
     try:
-        # Coba berbagai encoding
+        # 1. Baca file dengan berbagai encoding
         encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
         content = None
-        
         for encoding in encodings:
             try:
                 with open(vcf_path, "r", encoding=encoding, errors="ignore") as f:
@@ -126,38 +125,28 @@ def parse_vcf_numbers(vcf_path: Path) -> List[str]:
                 break
             except UnicodeDecodeError:
                 continue
-        
+
         if not content:
-            return []
-            
-        # Regex pattern untuk nomor telepon di VCF
+            return numbers
+
+        # 2. Ambil semua nomor dengan regex
         tel_patterns = [
             r"TEL[^:]*:([^\r\n]+)",
             r"PHONE[^:]*:([^\r\n]+)",
             r"CELL[^:]*:([^\r\n]+)",
             r"MOBILE[^:]*:([^\r\n]+)",
         ]
-        
         for pattern in tel_patterns:
             matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
             for match in matches:
-                raw_number = match.strip()
-                raw_number = re.sub(r'\s+', '', raw_number)
-                
+                raw_number = re.sub(r'\s+', '', match.strip())
                 normalized = clean_number(raw_number)
                 if normalized:
                     numbers.append(normalized)
-                    
+
     except Exception as e:
         print(f"Error parsing {vcf_path}: {e}")
-    
-    return numbers
-if normalized:
-    numbers.append(normalized)
-                    
-    except Exception as e:
-        print(f"Error parsing {vcf_path}: {e}")
-    
+
     return numbers
 
 def clean_number(number: str) -> str:
@@ -1011,6 +1000,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
