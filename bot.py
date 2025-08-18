@@ -142,14 +142,14 @@ def parse_vcf_numbers(vcf_path: Path) -> List[str]:
             matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
             for match in matches:
                 # Bersihkan nomor: hapus semua spasi dan karakter non-digit kecuali +
-                clean_number = match.strip()
+                    raw_number = match.strip()
                 # Hapus spasi dari nomor seperti "+852 6055 3083" menjadi "+85260553083"
-                clean_number = re.sub(r'\s+', '', clean_number)
-                
+                    raw_number = re.sub(r'\s+', '', raw_number)
+
                 # Gunakan fungsi clean_number untuk membersihkan dan normalisasi
-                cleaned = clean_number(clean_number)
-                if cleaned:
-                    numbers.append(cleaned)
+                    normalized = clean_number(raw_number)
+if normalized:
+    numbers.append(normalized)
                     
     except Exception as e:
         print(f"Error parsing {vcf_path}: {e}")
@@ -1007,4 +1007,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
