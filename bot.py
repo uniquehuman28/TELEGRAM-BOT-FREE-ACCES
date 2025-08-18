@@ -112,26 +112,45 @@ def write_vcard_batch(vcf_path: Path, contact_fullname_number_pairs: List[Tuple[
     os.replace(temp_path, vcf_path)
 
 def parse_vcf_numbers(vcf_path: Path) -> List[str]:
-    """Parse file VCF dan ekstrak nomor telepon"""
+    """Parse file VCF dan ekstrak nomor telepon - DIPERBAIKI"""
     numbers = []
     try:
-        with open(vcf_path, "r", encoding="utf-8", errors="ignore") as f:
-            content = f.read()
+        # Coba berbagai encoding
+        encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
+        content = None
+        
+        for encoding in encodings:
+            try:
+                with open(vcf_path, "r", encoding=encoding, errors="ignore") as f:
+                    content = f.read()
+                break
+            except UnicodeDecodeError:
+                continue
+        
+        if not content:
+            return []
             
-        # Regex untuk mencari nomor telepon di VCF
+        # Regex pattern yang lebih komprehensif untuk nomor telepon di VCF
         tel_patterns = [
-            r"TEL[^:]*:([^\r\n]+)",
-            r"PHONE[^:]*:([^\r\n]+)",
+            r"TEL[^:]*:([^\r\n]+)",           # Standard TEL field
+            r"PHONE[^:]*:([^\r\n]+)",         # PHONE field  
+            r"CELL[^:]*:([^\r\n]+)",          # CELL field
+            r"MOBILE[^:]*:([^\r\n]+)",        # MOBILE field
         ]
         
         for pattern in tel_patterns:
-            matches = re.findall(pattern, content, re.IGNORECASE)
+            matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
             for match in matches:
-                # Bersihkan nomor dari karakter yang tidak perlu
-                clean_number = re.sub(r"[^\d+\-\s()]", "", match.strip())
+                # Bersihkan nomor: hapus semua spasi dan karakter non-digit kecuali +
+                clean_number = match.strip()
+                # Hapus spasi dari nomor seperti "+852 6055 3083" menjadi "+85260553083"
+                clean_number = re.sub(r'\s+', '', clean_number)
+                
+                # Gunakan fungsi format_number yang sudah ada
                 formatted = format_number(clean_number)
                 if formatted:
                     numbers.append(formatted)
+                    
     except Exception as e:
         print(f"Error parsing {vcf_path}: {e}")
     
@@ -226,36 +245,19 @@ class VCF2TXTStates(StatesGroup):
     waiting_limit = State()
     processing = State()
 
-# ==================== FUNGSI KONVERSI VCF KE TXT ====================
+# ==================== FUNGSI KONVERSI VCF KE TXT - DIPERBAIKI ====================
 def convert_vcf_to_txt(vcf_path: Path, output_filename: str, limit: int = None) -> List[Path]:
-    """Konversi file VCF ke TXT dengan opsi pembatasan jumlah nomor per file"""
+    """Konversi file VCF ke TXT dengan opsi pembatasan jumlah nomor per file - DIPERBAIKI"""
     
-    # Parsing nomor dari VCF
-    numbers = []
-    try:
-        with open(vcf_path, "r", encoding="utf-8", errors="ignore") as f:
-            content = f.read()
-            
-        # Cari semua baris yang mengandung TEL
-        tel_pattern = r"TEL[^:]*:([^\r\n]+)"
-        matches = re.findall(tel_pattern, content, re.IGNORECASE)
-        
-        for match in matches:
-            # Bersihkan nomor: hapus spasi dan tanda +
-            num = match.strip()
-            num = num.replace(" ", "").replace("+", "")
-            if num:  # Pastikan nomor tidak kosong
-                numbers.append(num)
-                
-    except Exception as e:
-        raise Exception(f"Error membaca file VCF: {e}")
+    # Parsing nomor dari VCF menggunakan fungsi yang diperbaiki
+    numbers = parse_vcf_numbers(vcf_path)
     
     # Jika tidak ada nomor yang ditemukan
     if not numbers:
         return []
     
     # Hapus duplikat
-    numbers = list(dict.fromkeys(numbers))
+    numbers = remove_duplicates(numbers)
     
     # Batch nomor sesuai limit
     if limit and limit > 0:
@@ -431,7 +433,9 @@ async def handle_vcf2txt_limit(msg: Message, state: FSMContext):
                 total_numbers += sum(1 for _ in f)
         
         await processing_msg.edit_text(
-            f"Konversi selesai. Berikut adalah file hasil konversi dari VCF ke TXT."
+            f"✅ Konversi selesai!\n\n"
+            f"📊 Total nomor diekstrak: {total_numbers}\n"
+            f"📁 File dibuat: {len(output_files)}"
         )
         
         # Kirim file hasil
@@ -1130,5 +1134,4 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-
     asyncio.run(main())
