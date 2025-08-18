@@ -130,24 +130,28 @@ def parse_vcf_numbers(vcf_path: Path) -> List[str]:
         if not content:
             return []
             
-        # Regex pattern yang lebih komprehensif untuk nomor telepon di VCF
+        # Regex pattern untuk nomor telepon di VCF
         tel_patterns = [
-            r"TEL[^:]*:([^\r\n]+)",           # Standard TEL field
-            r"PHONE[^:]*:([^\r\n]+)",         # PHONE field  
-            r"CELL[^:]*:([^\r\n]+)",          # CELL field
-            r"MOBILE[^:]*:([^\r\n]+)",        # MOBILE field
+            r"TEL[^:]*:([^\r\n]+)",
+            r"PHONE[^:]*:([^\r\n]+)",
+            r"CELL[^:]*:([^\r\n]+)",
+            r"MOBILE[^:]*:([^\r\n]+)",
         ]
         
         for pattern in tel_patterns:
             matches = re.findall(pattern, content, re.IGNORECASE | re.MULTILINE)
             for match in matches:
-                # Bersihkan nomor: hapus semua spasi dan karakter non-digit kecuali +
-                    raw_number = match.strip()
-                # Hapus spasi dari nomor seperti "+852 6055 3083" menjadi "+85260553083"
-                    raw_number = re.sub(r'\s+', '', raw_number)
-
-                # Gunakan fungsi clean_number untuk membersihkan dan normalisasi
-                    normalized = clean_number(raw_number)
+                raw_number = match.strip()
+                raw_number = re.sub(r'\s+', '', raw_number)
+                
+                normalized = clean_number(raw_number)
+                if normalized:
+                    numbers.append(normalized)
+                    
+    except Exception as e:
+        print(f"Error parsing {vcf_path}: {e}")
+    
+    return numbers
 if normalized:
     numbers.append(normalized)
                     
@@ -1007,5 +1011,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
