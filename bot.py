@@ -17,7 +17,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # ==================== KONFIGURASI ====================
 BOT_TOKEN = "7383735988:AAFGMP-aseCISm3GLCFmUnKPymaWe-FddAw"
 ADMIN_IDS = [7818451398]
-QRIS_PATH = "/home/ubuntu/TELEGRAM-BOT-FREE-ACCES/QRIS.jpg"
+QRIS_PATH = "/home/ubuntu/TELEGRAM-BOT-FREE-ACCES/QRIS.png"
 BANK_INFO = """
 💳 Informasi Rekening:
 SEABANK: 901423312905 
@@ -314,7 +314,7 @@ def create_main_menu(is_admin=False):
     """Membuat menu utama inline keyboard"""
     keyboard = [
         [InlineKeyboardButton(text="📄 TXT→VCF", callback_data="txt_to_vcf")],
-        [InlineKeyboardButton(text="📇 VCF→TXT (error)", callback_data="vcf_to_txt")],
+        [InlineKeyboardButton(text="📇 VCF→TXT (BETA)", callback_data="vcf_to_txt")],
         [InlineKeyboardButton(text="ℹ️ Cara Penggunaan", callback_data="help")],
         [InlineKeyboardButton(text="💰 Donasi", callback_data="donasi")]
     ]
@@ -1130,4 +1130,5 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+
     asyncio.run(main())
