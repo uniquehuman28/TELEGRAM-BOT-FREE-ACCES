@@ -669,16 +669,23 @@ async def process_txt_inputs(msg: Message, state: FSMContext):
         
         summary = (
             f"✅ Selesai!\n"
-            f"• Total kontak valid: {total_contacts}\n"
-            f"• Baris di-skip (invalid): {invalid_count}\n"
-            f"• File VCF: {len(vcf_files_sorted)}"
-        )
-        await status.edit_text(summary)
-        
-        # === PATCH: kirim file satu per satu sesuai urutan ===
-        for fp in vcf_files_sorted:
-            file_input = FSInputFile(fp)
-            await msg.answer_document(document=file_input)
+        summary = (
+    f"✅ Selesai!\n"
+    f"• Total kontak valid: {total_contacts}\n"
+    f"• Baris di-skip (invalid): {invalid_count}\n"
+    f"• File VCF: {len(vcf_files_sorted)}"
+)
+
+# === PATCH: safe edit_text ===
+try:
+    await status.edit_text(summary)
+except Exception:
+    await msg.answer(summary)
+
+# === PATCH: kirim file satu per satu sesuai urutan ===
+for fp in vcf_files_sorted:
+    file_input = FSInputFile(fp)
+    await msg.answer_document(document=file_input)
 
         # Auto hapus cache setelah selesai
         clear_session(msg.from_user.id)
@@ -1016,6 +1023,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
