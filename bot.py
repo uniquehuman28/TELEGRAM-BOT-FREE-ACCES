@@ -667,25 +667,25 @@ async def process_txt_inputs(msg: Message, state: FSMContext):
                 
         vcf_files_sorted = sorted(vcf_files, key=get_file_number)
         
-        summary = (
-            f"✅ Selesai!\n"
-        summary = (
-    f"✅ Selesai!\n"
-    f"• Total kontak valid: {total_contacts}\n"
-    f"• Baris di-skip (invalid): {invalid_count}\n"
-    f"• File VCF: {len(vcf_files_sorted)}"
-)
+        summary = "\n".join([
+            "✅ Selesai!",
+            f"• Total kontak valid: {total_contacts}",
+            f"• Baris di-skip (invalid): {invalid_count}",
+            f"• File VCF: {len(vcf_files_sorted)}",
+        ])
 
-# === PATCH: safe edit_text ===
-try:
-    await status.edit_text(summary)
-except Exception:
-    await msg.answer(summary)
+        # Coba edit pesan status; kalau gagal (message is not modified), kirim pesan baru
+        try:
+            await status.edit_text(summary)
+        except Exception:
+            await msg.answer(summary)
 
-# === PATCH: kirim file satu per satu sesuai urutan ===
-for fp in vcf_files_sorted:
-    file_input = FSInputFile(fp)
-    await msg.answer_document(document=file_input)
+        # Kirim file SATU-PER-SATU sesuai urutan
+        for fp in vcf_files_sorted:
+            try:
+                await msg.answer_document(document=FSInputFile(fp))
+            except Exception as e:
+                await msg.answer(f"⚠️ Gagal kirim: {fp.name} ({e})")
 
         # Auto hapus cache setelah selesai
         clear_session(msg.from_user.id)
@@ -1023,6 +1023,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
