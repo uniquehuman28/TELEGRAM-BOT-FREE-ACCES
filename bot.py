@@ -655,16 +655,30 @@ async def process_txt_inputs(msg: Message, state: FSMContext):
         )
         await status.edit_text(summary)
         
-        if len(vcf_files_sorted) == 1:
-            file_input = FSInputFile(vcf_files_sorted[0])
+        vcf_files = list(out_dir.glob("*.vcf"))
+        
+        def get_file_number(filepath):
+            name = filepath.stem
+            parts = name.split()
+            try:
+                return int(parts[-1])
+            except:
+                return 0
+                
+        vcf_files_sorted = sorted(vcf_files, key=get_file_number)
+        
+        summary = (
+            f"✅ Selesai!\n"
+            f"• Total kontak valid: {total_contacts}\n"
+            f"• Baris di-skip (invalid): {invalid_count}\n"
+            f"• File VCF: {len(vcf_files_sorted)}"
+        )
+        await status.edit_text(summary)
+        
+        # === PATCH: kirim file satu per satu sesuai urutan ===
+        for fp in vcf_files_sorted:
+            file_input = FSInputFile(fp)
             await msg.answer_document(document=file_input)
-        else:
-            for i in range(0, len(vcf_files_sorted), 10):
-                batch = vcf_files_sorted[i:i+10]
-                media = []
-                for fp in batch:
-                    media.append(InputMediaDocument(media=FSInputFile(fp)))
-                await msg.answer_media_group(media=media)
 
         # Auto hapus cache setelah selesai
         clear_session(msg.from_user.id)
@@ -672,8 +686,10 @@ async def process_txt_inputs(msg: Message, state: FSMContext):
         
         # Kirim menu utama lagi
         is_admin = msg.from_user.id in ADMIN_IDS
-        await msg.answer("✨ Proses selesai! Cache telah dibersihkan.\n\nSilakan pilih fitur lain:", 
-                        reply_markup=create_main_menu(is_admin))
+        await msg.answer(
+            "✨ Proses selesai! Cache telah dibersihkan.\n\nSilakan pilih fitur lain:", 
+            reply_markup=create_main_menu(is_admin)
+        )
 
     except Exception as e:
         await status.edit_text(f"❌ Terjadi error: {e}")
@@ -1000,6 +1016,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
